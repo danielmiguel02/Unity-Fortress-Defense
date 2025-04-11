@@ -139,11 +139,14 @@ public class CharacterScript : MonoBehaviour
     public float CharacterAttack() 
     {
         foreach (Transform c in characters)
-        { 
+        {
+            CharacterAttributesScript attributes = c.GetComponent<CharacterAttributesScript>();
             if (c.CompareTag("Knight") && c != null)
             {
-                CharacterAttributesScript attributes = c.GetComponent<CharacterAttributesScript>();
-
+                return attributes.damage;
+            }
+            if (c.CompareTag("Mage") && c != null) 
+            {
                 return attributes.damage;
             }
         }
