@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Castle
   - Tower
+  - BasicTower
+  - Knight
+  - Mage
   layers:
   - Default
   - TransparentFX
