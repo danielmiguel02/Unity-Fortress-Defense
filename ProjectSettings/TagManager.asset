@@ -9,6 +9,7 @@ TagManager:
   - BasicTower
   - Knight
   - Mage
+  - Boundary
   layers:
   - Default
   - TransparentFX
