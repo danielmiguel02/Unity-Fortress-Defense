@@ -10,11 +10,15 @@ TagManager:
   - Knight
   - Mage
   - Boundary
+  - MediumTower
+  - StrongTower
+  - FortressTower
+  - CoinsPlayer
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Ground
   - Water
   - UI
   - 

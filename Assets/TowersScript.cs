@@ -15,7 +15,12 @@ public class TowersScript : MonoBehaviour
     List<Transform> towerList;
 
     public GameObject basicTowerObject;
+    public GameObject mediumTowerObject;
+    public GameObject strongTowerObject;
+    public GameObject fortressTowerObject;
+
     public GameUI gameUI;
+    [SerializeField] private CoinsSystem coinsSystem;
     public GridSystem gridSystem;
     private new Camera camera;
 
@@ -53,6 +58,27 @@ public class TowersScript : MonoBehaviour
                 attributes.range = 7f;
             }
 
+            if (t.CompareTag("MediumTower"))
+            {
+                attributes.health = 10f;
+                attributes.damage = 1.6f;
+                attributes.range = 7f;
+            }
+
+            if (t.CompareTag("StrongTower")) 
+            {
+                attributes.health = 10f;
+                attributes.damage = 1.6f;
+                attributes.range = 7f;
+            }
+
+            if (t.CompareTag("FortressTower")) 
+            {
+                attributes.health = 10f;
+                attributes.damage = 1.6f;
+                attributes.range = 7f;
+            }
+
             if (t.CompareTag("Castle"))
             {
                 attributes.health = 20f;
@@ -78,6 +104,7 @@ public class TowersScript : MonoBehaviour
             if (attributes.health <= 0)
             {
                 Destroy(t.gameObject);
+                gridSystem.RemoveOccupiedPosition(t.transform.position);
                 if (t.gameObject.CompareTag("Castle")) 
                 {
                     Debug.Log("Warrions WIN");
@@ -104,7 +131,7 @@ public class TowersScript : MonoBehaviour
 
     public float TowerHealth(Transform targetTower)
     {
-        if (targetTower != null && targetTower.CompareTag("BasicTower"))
+        if (targetTower != null && targetTower.CompareTag("BasicTower") || targetTower.CompareTag("MediumTower") || targetTower.CompareTag("StrongTower") || targetTower.CompareTag("FortressTower"))
         {
             TowerAttributesScript attributes = targetTower.GetComponent<TowerAttributesScript>();
             attributes.health -= characterScript.CharacterAttack();
@@ -130,7 +157,7 @@ public class TowersScript : MonoBehaviour
             if (t == null) continue;
 
             TowerAttributesScript attributes = t.GetComponent<TowerAttributesScript>();
-            if (t.CompareTag("BasicTower"))
+            if (t.CompareTag("BasicTower") || t.CompareTag("MediumTower") || t.CompareTag("StrongTower") || t.CompareTag("FortressTower"))
                 return attributes.damage;
 
             attributes = t.GetComponent<TowerAttributesScript>();
@@ -162,24 +189,50 @@ public class TowersScript : MonoBehaviour
     public GameObject PlaceTower(bool waitingToPlaceTower, GameObject newTower)
     {
         Vector3 placementPos = gridSystem.PlacementPosition();
+        Quaternion rotationPos = gridSystem.RotationPosition();
+        string towerSelected = gameUI.towerSelected;
 
         if (waitingToPlaceTower && Mouse.current.leftButton.wasPressedThisFrame)
         {
-            // Check if the position is already occupied BEFORE adding
-            if (!gridSystem.OccupiedPositionSet.Contains(placementPos) && !gameUI.PlacedTower())
+            if (!gridSystem.OccupiedPositionSet.Contains(placementPos) && gameUI.waitingToPlaceTower && coinsSystem.currentPlayerCoins >= coinsSystem.TowerCost(towerSelected))
             {
-                newTower = Instantiate(basicTowerObject, placementPos, Quaternion.identity, towersTransform);
+                if (newTower == basicTowerObject)
+                    newTower = Instantiate(basicTowerObject, placementPos, rotationPos, towersTransform);
+                if (newTower == mediumTowerObject)
+                    newTower = Instantiate(mediumTowerObject, placementPos, rotationPos, towersTransform);
+                if (newTower == strongTowerObject)
+                    newTower = Instantiate(strongTowerObject, placementPos, rotationPos, towersTransform);
+                if (newTower == fortressTowerObject)
+                    newTower = Instantiate(fortressTowerObject, placementPos, rotationPos, towersTransform);
+
                 towers.Add(newTower.transform);
                 attackTimers.Add(0f); // Initialize the timer for the new tower
 
                 gridSystem.AddOccupiedPosition(placementPos); // Add it AFTER placement
-                gameUI.WaitingToPlaceTower(false);
 
                 TowerAttributesScript attributes = newTower.GetComponent<TowerAttributesScript>();
                 if (attributes == null)
                     attributes = newTower.AddComponent<TowerAttributesScript>();
 
                 if (newTower.CompareTag("BasicTower"))
+                {
+                    attributes.health = 10f;
+                    attributes.damage = 1.6f;
+                    attributes.range = 7f;
+                }
+                if (newTower.CompareTag("MediumTower"))
+                {
+                    attributes.health = 10f;
+                    attributes.damage = 1.6f;
+                    attributes.range = 7f;
+                }
+                if (newTower.CompareTag("StrongTower"))
+                {
+                    attributes.health = 10f;
+                    attributes.damage = 1.6f;
+                    attributes.range = 7f;
+                }
+                if (newTower.CompareTag("FortressTower"))
                 {
                     attributes.health = 10f;
                     attributes.damage = 1.6f;

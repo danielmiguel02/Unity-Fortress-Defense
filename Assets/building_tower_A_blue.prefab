@@ -66,7 +66,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: ccfdfb735e138354e938e5ab7f516928, type: 3}
       propertyPath: m_TagString
-      value: BasicTower
+      value: MediumTower
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

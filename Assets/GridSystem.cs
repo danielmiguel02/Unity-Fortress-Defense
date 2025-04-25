@@ -1,38 +1,63 @@
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class GridSystem : MonoBehaviour
 {
-    [SerializeField] private GameObject objectToPlace;
-    public float gridSize = 1f;
-    private GameObject ghostObject;
+    public string ObjectToPlace { private get; set; }
+
+    [SerializeField] private GameObject BasicTowerObject;
+    [SerializeField] private GameObject MediumTowerObject;
+    [SerializeField] private GameObject StrongTowerObject;
+    [SerializeField] private GameObject FortressTowerObject;
+
+    private GameObject TowerToPlace;
+    public GameObject ghostObject { get; set; }
 
     private HashSet<Vector3> occupiedPosition = new HashSet<Vector3>();
     public HashSet<Vector3> OccupiedPositionSet => occupiedPosition;
 
+    public LayerMask groundLayerMask;
     public GameUI gameUI;
     public TowersScript towersScript;
 
+    private Transform currentTileHit;
+
     private void Start()
     {
+        TowerToPlace = BasicTowerObject;
         CreateGhostObject();
     }
 
     private void Update()
     {
-        if (!gameUI.PlacedTower()) // Only show ghost while building
+        if (!gameUI.PlacedTower())
             UpdateGhostPosition();
         else
-            ghostObject.SetActive(false); // Hide it once tower is placed
+            ghostObject.SetActive(false);
     }
 
     public void CreateGhostObject()
     {
-        ghostObject = Instantiate(objectToPlace);
+        switch (ObjectToPlace)
+        {
+            case "BasicTower":
+                TowerToPlace = BasicTowerObject;
+                break;
+            case "MediumTower":
+                TowerToPlace = MediumTowerObject;
+                break;
+            case "StrongTower":
+                TowerToPlace = StrongTowerObject;
+                break;
+            case "FortressTower":
+                TowerToPlace = FortressTowerObject;
+                break;
+        }
+
+        ghostObject = Instantiate(TowerToPlace);
 
         Renderer[] renderers = ghostObject.GetComponentsInChildren<Renderer>();
-
         foreach (Renderer renderer in renderers)
         {
             Material mat = renderer.material;
@@ -41,7 +66,7 @@ public class GridSystem : MonoBehaviour
             mat.color = color;
 
             mat.SetFloat("_Mode", 2);
-            mat.SetInt("_ScrBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             mat.SetInt("_ZWrite", 0);
             mat.DisableKeyword("_ALPHATEST_ON");
@@ -50,66 +75,87 @@ public class GridSystem : MonoBehaviour
             mat.renderQueue = 3000;
         }
 
-        ghostObject.SetActive(false); // Keep it hidden until placement starts
+        ghostObject.SetActive(false);
     }
 
-
-    void UpdateGhostPosition() 
-    { 
+    void UpdateGhostPosition()
+    {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit))
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayerMask))
         {
-            Vector3 point = hit.point;
+            currentTileHit = hit.collider.transform;
+            Vector3 tilePosition = currentTileHit.position;
 
-            Vector3 snappedPosition = new Vector3(Mathf.Round(point.x / gridSize) * gridSize, (float)((Mathf.Round(point.y / gridSize) * gridSize) + 0.5), Mathf.Round(point.z / gridSize) * gridSize);
+            ghostObject.transform.position = tilePosition;
+            ghostObject.SetActive(true);
 
-            ghostObject.transform.position = snappedPosition;
-
-            if (occupiedPosition.Contains(snappedPosition) && !gameUI.PlacedTower())
+            if (occupiedPosition.Contains(tilePosition))
                 SetGhostColor(Color.red);
-            else if (!occupiedPosition.Contains(snappedPosition))
-                SetGhostColor(Color.green);
             else
-                SetGhostColor(Color.clear); //Clear the color so it doesn't show green/red (not working)
+                SetGhostColor(Color.green);
+        }
+        else
+        {
+            ghostObject.SetActive(false);
         }
     }
 
-    void SetGhostColor(Color color) 
+    void SetGhostColor(Color color)
     {
         Renderer[] renderers = ghostObject.GetComponentsInChildren<Renderer>();
-
-        foreach (Renderer renderer in renderers) 
+        foreach (Renderer renderer in renderers)
         {
-            Material mat = renderer.material;
+            Material mat = renderer.sharedMaterial;
             mat.color = color;
         }
     }
 
-    public Vector3 PlacementPosition() 
+    public Vector3 PlacementPosition()
     {
-        Vector3 placementPosition = ghostObject.transform.position;
-
-        return placementPosition;
+        return ghostObject.transform.position;
     }
 
-    public HashSet<Vector3> OccupiedPosition(Vector3 occupiedPos) 
+    public Quaternion RotationPosition()
     {
-        occupiedPosition.Add(occupiedPos);
-        return occupiedPosition;
-    }
-
-    public void StartPlacing()
-    {
-        if (ghostObject == null)
-            CreateGhostObject();
-
-        if (gameUI.PlacedTower() == false)
-            ghostObject.SetActive(true);
+        return ghostObject.transform.rotation;
     }
 
     public void AddOccupiedPosition(Vector3 pos)
     {
         occupiedPosition.Add(pos);
     }
+
+    public void RemoveOccupiedPosition(Vector3 pos)
+    {
+        occupiedPosition.Remove(pos);
+    }
+
+    public void StartPlacing()
+    {
+        if (ghostObject != null)
+            Destroy(ghostObject);
+
+        CreateGhostObject();
+
+        if (!gameUI.PlacedTower())
+            ghostObject.SetActive(true);
+    }
+
+    public bool TryPlaceTower()
+    {
+        if (currentTileHit != null)
+        {
+            Vector3 pos = currentTileHit.position;
+
+            if (!occupiedPosition.Contains(pos))
+            {
+                Instantiate(TowerToPlace, pos, Quaternion.identity);
+                AddOccupiedPosition(pos);
+
+                return true;
+            }
+        }
+        return false;
+    }
 }
+

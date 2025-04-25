@@ -13,6 +13,7 @@ public class CharacterScript : MonoBehaviour
     public float speed = 1.5f;
 
     TowersScript towersScript;
+    [SerializeField] private CoinsSystem coinsSystem;
 
     void Start()
     {
@@ -38,12 +39,14 @@ public class CharacterScript : MonoBehaviour
                 attributes.health = 10f;
                 attributes.damage = 1f;
                 attributes.range = 0f;
+                attributes.value = 100;
             }
             else if (child.CompareTag("Mage"))
             {
                 attributes.health = 7f;
                 attributes.damage = 1.3f;
                 attributes.range = 2.2f;
+                attributes.value = 150;
             }
 
             // NavMeshAgent
@@ -79,6 +82,9 @@ public class CharacterScript : MonoBehaviour
             var attributes = character.GetComponent<CharacterAttributesScript>();
             if (attributes.health <= 0f) {
                 Destroy(character.gameObject);
+                Debug.Log(character.name + " died, coins + " + attributes.value);
+                coinsSystem.currentPlayerCoins += attributes.value;
+                coinsSystem.UpdateCoins();
             }
 
             Transform closestTower = GetClosestTower(character);
