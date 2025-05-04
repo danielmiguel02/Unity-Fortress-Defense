@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.TextCore.Text;
@@ -24,15 +25,26 @@ public class TowersScript : MonoBehaviour
     public GridSystem gridSystem;
     private new Camera camera;
 
+    public Dictionary<string, TowerStats> towerTemplates;
     public enum TowerAttributes {
         Health,
         Damage,
         Range
     };
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+
+    void Awake()
     {
+        // Initialize tower templates
+        towerTemplates = new Dictionary<string, TowerStats>
+        {
+            ["BasicTower"] = new TowerStats { health = 10f, damage = 1.6f, range = 5f, towerType = TowerType.Basic },
+            ["MediumTower"] = new TowerStats { health = 12f, damage = 1.8f, range = 7f, towerType = TowerType.Medium },
+            ["StrongTower"] = new TowerStats { health = 15f, damage = 2.2f, range = 8f, towerType = TowerType.Strong },
+            ["FortressTower"] = new TowerStats { health = 18f, damage = 2.8f, range = 9f, towerType = TowerType.Fortress },
+            ["Castle"] = new TowerStats { health = 20f, damage = 3.5f, range = 10f, towerType = TowerType.Castle }
+        };
+
         towers = new List<Transform>();
         attackTimers = new List<float>();
         towersTransform = GetComponent<Transform>();
@@ -51,45 +63,23 @@ public class TowersScript : MonoBehaviour
                 attributes = t.gameObject.AddComponent<TowerAttributesScript>();
             }
 
-            if (t.CompareTag("BasicTower"))
-            {
-                attributes.health = 10f;
-                attributes.damage = 1.6f;
-                attributes.range = 7f;
-            }
+            string tag = t.tag;
 
-            if (t.CompareTag("MediumTower"))
+            if (towerTemplates.TryGetValue(tag, out TowerStats stats))
             {
-                attributes.health = 10f;
-                attributes.damage = 1.6f;
-                attributes.range = 7f;
+                attributes.health = stats.health;
+                attributes.damage = stats.damage;
+                attributes.range = stats.range;
+                attributes.towerType = stats.towerType;
             }
-
-            if (t.CompareTag("StrongTower")) 
+            else
             {
-                attributes.health = 10f;
-                attributes.damage = 1.6f;
-                attributes.range = 7f;
-            }
-
-            if (t.CompareTag("FortressTower")) 
-            {
-                attributes.health = 10f;
-                attributes.damage = 1.6f;
-                attributes.range = 7f;
-            }
-
-            if (t.CompareTag("Castle"))
-            {
-                attributes.health = 20f;
-                attributes.damage = 0f;
-                attributes.range = 10f;
+                Debug.LogWarning($"Tower with tag {tag} does not have a defined template.");
             }
         }
     }
 
 
-    // Update is called once per frame
     void Update()
     {
         for (int i = 0; i < towers.Count; i++)
@@ -219,24 +209,29 @@ public class TowersScript : MonoBehaviour
                     attributes.health = 10f;
                     attributes.damage = 1.6f;
                     attributes.range = 7f;
+                    attributes.towerType = TowerType.Basic;
                 }
+
                 if (newTower.CompareTag("MediumTower"))
                 {
                     attributes.health = 10f;
                     attributes.damage = 1.6f;
                     attributes.range = 7f;
+                    attributes.towerType = TowerType.Medium;
                 }
                 if (newTower.CompareTag("StrongTower"))
                 {
                     attributes.health = 10f;
                     attributes.damage = 1.6f;
                     attributes.range = 7f;
+                    attributes.towerType = TowerType.Strong;
                 }
                 if (newTower.CompareTag("FortressTower"))
                 {
                     attributes.health = 10f;
                     attributes.damage = 1.6f;
                     attributes.range = 7f;
+                    attributes.towerType = TowerType.Fortress;
                 }
             }
         }

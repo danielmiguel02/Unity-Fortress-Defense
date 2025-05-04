@@ -17,6 +17,7 @@ public class GridSystem : MonoBehaviour
     private HashSet<Vector3> occupiedPosition = new HashSet<Vector3>();
     public HashSet<Vector3> OccupiedPositionSet => occupiedPosition;
 
+
     public LayerMask groundLayerMask;
     public GameUI gameUI;
     public TowersScript towersScript;
@@ -108,6 +109,12 @@ public class GridSystem : MonoBehaviour
             Material mat = renderer.sharedMaterial;
             mat.color = color;
         }
+    }
+
+    public void DisableGhostObject() 
+    {
+        ghostObject.SetActive(false);
+        UpdateGhostPosition();
     }
 
     public Vector3 PlacementPosition()

@@ -99,6 +99,7 @@ MonoBehaviour:
   health: 0
   damage: 0
   range: 0
+  towerType: 3
 --- !u!208 &5629801741741139393
 NavMeshObstacle:
   m_ObjectHideFlags: 0

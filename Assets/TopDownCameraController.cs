@@ -47,7 +47,7 @@ public class TopDownCameraController : MonoBehaviour
         forward.Normalize();
         right.Normalize();
 
-        Vector3 moveDirection = (forward * verticalInput + right * horizontalInput).normalized;
+        Vector3 moveDirection = (forward * verticalInput + right * horizontalInput);
 
         // Calculate the desired position
         Vector3 targetPosition = transform.position + moveDirection * moveSpeed * Time.deltaTime;  // Using Time.deltaTime for smoothness

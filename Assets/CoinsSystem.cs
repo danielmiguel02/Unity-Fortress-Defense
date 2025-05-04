@@ -11,12 +11,12 @@ public class CoinsSystem : MonoBehaviour
     private TextMeshProUGUI costStrongTowerText;
     private TextMeshProUGUI costFortressTowerText;
 
-    public int currentPlayerCoins { get; set; } = 800;
+    public int currentPlayerCoins { get; set; } = 0;
 
-    private int basicTowerCost = 100;
-    private int mediumTowerCost = 200;
-    private int strongTowerCost = 300;
-    private int fortressTowerCost = 400;
+    public int basicTowerCost = 100;
+    public int mediumTowerCost = 200;
+    public int strongTowerCost = 300;
+    public int fortressTowerCost = 400;
 
 
     private void Start()
@@ -46,6 +46,41 @@ public class CoinsSystem : MonoBehaviour
 
     private void Update()
     {
+        if (currentPlayerCoins < fortressTowerCost)
+        {
+            costFortressTowerText.color = Color.yellow;
+        }
+        else 
+        {
+            costFortressTowerText.color = Color.white;
+        }
+
+        if (currentPlayerCoins < strongTowerCost)
+        {
+            costStrongTowerText.color = Color.yellow;
+        }
+        else 
+        {
+            costStrongTowerText.color = Color.white;
+        }
+
+        if (currentPlayerCoins < mediumTowerCost) 
+        { 
+            costMediumTowerText.color = Color.yellow;
+        } 
+        else 
+        {
+            costMediumTowerText.color = Color.white;    
+        }
+
+        if (currentPlayerCoins < basicTowerCost)
+        {
+            costBasicTowerText.color = Color.yellow;
+        }
+        else 
+        { 
+            costBasicTowerText.color = Color.white;
+        }
     }
 
     public void UpdateCoins() 

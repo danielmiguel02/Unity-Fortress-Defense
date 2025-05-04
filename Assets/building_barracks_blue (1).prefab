@@ -96,3 +96,4 @@ MonoBehaviour:
   health: 0
   damage: 0
   range: 0
+  towerType: 4

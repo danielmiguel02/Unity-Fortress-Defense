@@ -5,14 +5,15 @@ using UnityEngine.AI;
 public class CharacterScript : MonoBehaviour
 {
     [SerializeField] private GameObject towers;
-    private Transform[] characters;
-    private Animator[] animators;
-    private NavMeshAgent[] agents;
+    public Transform[] characters { private get; set; }
+    public Animator[] animators { private get; set; }
+    public NavMeshAgent[] agents { private get; set; }
     private float[] attackTimers;
 
     public float speed = 1.5f;
 
     TowersScript towersScript;
+    [SerializeField] private WaveSystem waveSystem;
     [SerializeField] private CoinsSystem coinsSystem;
 
     void Start()
@@ -69,63 +70,7 @@ public class CharacterScript : MonoBehaviour
 
     void Update()
     {
-        for (int i = 0; i < characters.Length; i++)
-        {
-            Transform character = characters[i];
-            Animator anim = animators[i];
-            NavMeshAgent agent = agents[i];
-
-            // Safeguard: skip if already destroyed
-            if (character == null) continue;
-
-
-            var attributes = character.GetComponent<CharacterAttributesScript>();
-            if (attributes.health <= 0f) {
-                Destroy(character.gameObject);
-                Debug.Log(character.name + " died, coins + " + attributes.value);
-                coinsSystem.currentPlayerCoins += attributes.value;
-                coinsSystem.UpdateCoins();
-            }
-
-            Transform closestTower = GetClosestTower(character);
-            if (closestTower == null)
-            {
-                anim.Play("Idle");
-                agent.ResetPath();
-                continue;
-            }
-
-            Vector3 targetPosition = new Vector3(closestTower.position.x, character.position.y, closestTower.position.z);
-            float stoppingDistance = closestTower.localScale.x + attributes.range;
-            float currentDistance = Vector3.Distance(character.position, targetPosition);
-
-            agent.stoppingDistance = stoppingDistance;
-
-            if (currentDistance > stoppingDistance)
-            {
-                if (agent.isOnNavMesh)
-                    agent.SetDestination(targetPosition);
-
-                Vector3 moveDir = agent.velocity.normalized;
-                if (moveDir.magnitude > 0.1f)
-                    character.forward = moveDir;
-
-                anim.Play("Running_A");
-            }
-            else
-            {
-                if (agent.isOnNavMesh)
-                    agent.ResetPath();
-
-                attackTimers[i] -= Time.deltaTime;
-                if (attackTimers[i] <= 0f)
-                {
-                    anim.Play("attack_animation");
-                    towersScript.TowerHealth(closestTower);
-                    attackTimers[i] = 1.0f;
-                }
-            }
-        }
+        CharacterMovement();
     }
 
     private Transform GetClosestTower(Transform character)
@@ -170,5 +115,115 @@ public class CharacterScript : MonoBehaviour
                 return attributes.damage;
         }
         return 0;
+    }
+
+    public void CharacterMovement() 
+    {
+        for (int i = 0; i < characters.Length; i++)
+        {
+            Transform character = characters[i];
+            Animator anim = animators[i];
+            NavMeshAgent agent = agents[i];
+
+            // Safeguard: skip if already destroyed
+            if (character == null) continue;
+
+
+            var attributes = character.GetComponent<CharacterAttributesScript>();
+            if (attributes.health <= 0f)
+            {
+                Destroy(character.gameObject);
+                Debug.Log(character.name + " died, coins + " + attributes.value);
+                coinsSystem.currentPlayerCoins += attributes.value;
+                coinsSystem.UpdateCoins();
+                waveSystem.RemoveDeadCharacter();
+            }
+
+            Transform closestTower = GetClosestTower(character);
+            if (closestTower == null)
+            {
+                anim.Play("Idle");
+                agent.ResetPath();
+                continue;
+            }
+
+            Vector3 targetPosition = new Vector3(closestTower.position.x, character.position.y, closestTower.position.z);
+            float stoppingDistance = closestTower.localScale.x + attributes.range;
+            float currentDistance = Vector3.Distance(character.position, targetPosition);
+
+            agent.stoppingDistance = stoppingDistance;
+
+            if (currentDistance > stoppingDistance)
+            {
+                if (agent.isOnNavMesh)
+                    agent.SetDestination(targetPosition);
+
+                Vector3 moveDir = agent.velocity.normalized;
+                if (moveDir.magnitude > 0.1f)
+                    character.forward = moveDir;
+
+                anim.Play("Running_A");
+            }
+            else
+            {
+                if (agent.isOnNavMesh)
+                    agent.ResetPath();
+
+                attackTimers[i] -= Time.deltaTime;
+                if (attackTimers[i] <= 0f)
+                {
+                    anim.Play("attack_animation");
+                    towersScript.TowerHealth(closestTower);
+                    attackTimers[i] = 1.0f;
+                }
+            }
+        }
+    }
+
+    public void RegisterCharacter(Transform newCharacter)
+    {
+        var charList = new List<Transform>(characters);
+        var animList = new List<Animator>(animators);
+        var agentList = new List<NavMeshAgent>(agents);
+
+        charList.Add(newCharacter);
+        animList.Add(newCharacter.GetComponent<Animator>());
+
+        var attributes = newCharacter.GetComponent<CharacterAttributesScript>();
+        if (attributes == null)
+            attributes = newCharacter.gameObject.AddComponent<CharacterAttributesScript>();
+
+        if (newCharacter.CompareTag("Knight"))
+        {
+            attributes.health = 10f;
+            attributes.damage = 1f;
+            attributes.range = 0f;
+            attributes.value = 100;
+        }
+        else if (newCharacter.CompareTag("Mage"))
+        {
+            attributes.health = 7f;
+            attributes.damage = 1.3f;
+            attributes.range = 2.2f;
+            attributes.value = 150;
+        }
+
+        var agent = newCharacter.GetComponent<NavMeshAgent>();
+        if (agent == null)
+            agent = newCharacter.gameObject.AddComponent<NavMeshAgent>();
+
+        agent.speed = speed;
+        agent.angularSpeed = 0f;
+        agent.updateRotation = false;
+        agentList.Add(agent);
+
+        characters = charList.ToArray();
+        animators = animList.ToArray();
+        agents = agentList.ToArray();
+
+        // Expand the attack timer array
+        var newTimers = new float[characters.Length];
+        attackTimers.CopyTo(newTimers, 0);
+        attackTimers = newTimers;
     }
 }
