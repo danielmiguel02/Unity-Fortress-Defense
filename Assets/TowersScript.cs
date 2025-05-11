@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Security.Cryptography;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime.Misc;
@@ -11,6 +12,7 @@ public class TowersScript : MonoBehaviour
     private List<Transform> towers;
     private Transform towersTransform;
     [SerializeField] private GameObject characters;
+    [SerializeField] private ProjectileSpawner arrow;
     CharacterScript characterScript;
     private List<float> attackTimers;
     List<Transform> towerList;
@@ -26,7 +28,8 @@ public class TowersScript : MonoBehaviour
     private new Camera camera;
 
     public Dictionary<string, TowerStats> towerTemplates;
-    public enum TowerAttributes {
+    public enum TowerAttributes
+    {
         Health,
         Damage,
         Range
@@ -84,40 +87,55 @@ public class TowersScript : MonoBehaviour
     {
         for (int i = 0; i < towers.Count; i++)
         {
-            Transform t = towers[i];
+            HandleTowerBehavior(i);
+        }
+    }
 
-            // Safeguard: skip if already destroyed
-            if (t == null) continue;
+    public void HandleTowerBehavior(int index)
+    {
+        Transform t = towers[index];
+        if (t == null) return;
 
-            TowerAttributesScript attributes = t.GetComponent<TowerAttributesScript>();
-
-            if (attributes.health <= 0)
+        TowerAttributesScript attributes = t.GetComponent<TowerAttributesScript>();
+        if (attributes.health <= 0)
+        {
+            Destroy(t.gameObject);
+            gridSystem.RemoveOccupiedPosition(t.position);
+            if (t.CompareTag("Castle"))
             {
-                Destroy(t.gameObject);
-                gridSystem.RemoveOccupiedPosition(t.transform.position);
-                if (t.gameObject.CompareTag("Castle")) 
+                Debug.Log("Warrions WIN");
+            }
+        }
+        else
+        {
+            Transform closestCharacter = GetClosestCharacter(t, attributes.range);
+            if (closestCharacter == null) return;
+
+            Vector3 targetPosition = new Vector3(closestCharacter.position.x, t.position.y, closestCharacter.position.z);
+            float attackDistance = closestCharacter.localScale.x + attributes.range;
+            float currentDistance = Vector3.Distance(t.position, targetPosition);
+
+            attackTimers[index] -= Time.deltaTime;
+            if (currentDistance < attackDistance && attackTimers[index] <= 0f && !characterScript.isDead(closestCharacter))
+            {
+                attackTimers[index] = 1.5f;
+
+                characterScript.CharacterHealth(closestCharacter, attributes.damage);
+                Debug.Log(t.gameObject.name + " dealt " + attributes.damage + " damage to " + closestCharacter);
+
+                ProjectileSpawner thisArrow = t.GetComponentInChildren<ProjectileSpawner>();
+                if (thisArrow != null)
                 {
-                    Debug.Log("Warrions WIN");
+                    thisArrow.ShootArrow(closestCharacter);
                 }
-            } else
-            {
-                Transform closestCharacter = GetClosestCharacter(t);
-                if (closestCharacter == null)
-                    continue;
-
-                Vector3 targetPosition = new Vector3(closestCharacter.position.x, t.position.y, closestCharacter.position.z);
-                float attackDistance = closestCharacter.localScale.x + attributes.range;
-                float currentDistance = Vector3.Distance(t.position, targetPosition);
-
-
-                attackTimers[i] -= Time.deltaTime;
-                if (currentDistance < attackDistance && attackTimers[i] <= 0f) {
-                    characterScript.CharacterHealth(closestCharacter, attributes.damage);
-                    attackTimers[i] = 1.0f;
+                else
+                {
+                    Debug.LogWarning("ProjectileSpawner not found for tower: " + t.name);
                 }
             }
         }
     }
+
 
     public float TowerHealth(Transform targetTower)
     {
@@ -140,33 +158,16 @@ public class TowersScript : MonoBehaviour
         return 0;
     }
 
-    public float TowerAttack()
-    {
-        foreach (Transform t in towers)
-        {
-            if (t == null) continue;
 
-            TowerAttributesScript attributes = t.GetComponent<TowerAttributesScript>();
-            if (t.CompareTag("BasicTower") || t.CompareTag("MediumTower") || t.CompareTag("StrongTower") || t.CompareTag("FortressTower"))
-                return attributes.damage;
-
-            attributes = t.GetComponent<TowerAttributesScript>();
-            if (t.CompareTag("Castle"))
-                return attributes.damage;
-
-        }
-        return 0;
-    }
-
-    private Transform GetClosestCharacter(Transform tower)
+    private Transform GetClosestCharacter(Transform tower, float range)
     {
         Transform closest = null;
-        float minDistance = Mathf.Infinity;
+        float minDistance = range;
 
         foreach (Transform character in characters.transform)
         {
             float distance = Vector3.Distance(tower.position, character.position);
-            if (distance < minDistance)
+            if (distance <= range && distance < minDistance)
             {
                 minDistance = distance;
                 closest = character;
@@ -238,5 +239,4 @@ public class TowersScript : MonoBehaviour
 
         return newTower;
     }
-
 }

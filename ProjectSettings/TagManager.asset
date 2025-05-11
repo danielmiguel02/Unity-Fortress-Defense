@@ -15,6 +15,7 @@ TagManager:
   - FortressTower
   - CoinsPlayer
   - WaveSpawner
+  - Ground
   layers:
   - Default
   - TransparentFX
@@ -24,8 +25,8 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
+  - Arrows
+  - Characters
   - 
   - 
   - 

@@ -6,4 +6,6 @@ public class CharacterAttributesScript : MonoBehaviour
     public float damage;
     public float range;
     public int value;
+
+    public bool isDead = false;
 }

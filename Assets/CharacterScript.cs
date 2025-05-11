@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.TextCore.Text;
 
 public class CharacterScript : MonoBehaviour
 {
@@ -93,9 +94,9 @@ public class CharacterScript : MonoBehaviour
 
     public float CharacterHealth(Transform targetCharacter, float damage)
     {
-        if (targetCharacter != null)
+        CharacterAttributesScript attributes = targetCharacter.GetComponent<CharacterAttributesScript>();
+        if (targetCharacter != null && !attributes.isDead)
         {
-            CharacterAttributesScript attributes = targetCharacter.GetComponent<CharacterAttributesScript>();
             attributes.health -= damage;
             Debug.Log($"{targetCharacter.name} took {damage} damage and has {attributes.health} HP");
             return attributes.health;
@@ -117,7 +118,7 @@ public class CharacterScript : MonoBehaviour
         return 0;
     }
 
-    public void CharacterMovement() 
+    public void CharacterMovement()
     {
         for (int i = 0; i < characters.Length; i++)
         {
@@ -125,20 +126,45 @@ public class CharacterScript : MonoBehaviour
             Animator anim = animators[i];
             NavMeshAgent agent = agents[i];
 
-            // Safeguard: skip if already destroyed
             if (character == null) continue;
 
-
             var attributes = character.GetComponent<CharacterAttributesScript>();
+
+            // Skip all logic if already marked dead
+            if (attributes.isDead)
+                continue;
+
+            // Death check and logic
             if (attributes.health <= 0f)
             {
-                Destroy(character.gameObject);
+                attributes.isDead = true;
+
+                // Stop NavMeshAgent
+                if (agent.isOnNavMesh)
+                {
+                    agent.ResetPath();
+                    agent.isStopped = true;
+                }
+
+                // Disable collider to stop further attacks
+                var collider = character.GetComponent<Collider>();
+                if (collider != null)
+                    collider.enabled = false;
+
+                // Play death animation and schedule destruction
+                anim.Play("Dead");
+                Destroy(character.gameObject, 5f);
+
+                // Give coins and notify systems
                 Debug.Log(character.name + " died, coins + " + attributes.value);
                 coinsSystem.currentPlayerCoins += attributes.value;
                 coinsSystem.UpdateCoins();
                 waveSystem.RemoveDeadCharacter();
+
+                continue;
             }
 
+            // Get closest tower
             Transform closestTower = GetClosestTower(character);
             if (closestTower == null)
             {
@@ -179,6 +205,7 @@ public class CharacterScript : MonoBehaviour
             }
         }
     }
+
 
     public void RegisterCharacter(Transform newCharacter)
     {
@@ -225,5 +252,12 @@ public class CharacterScript : MonoBehaviour
         var newTimers = new float[characters.Length];
         attackTimers.CopyTo(newTimers, 0);
         attackTimers = newTimers;
+    }
+
+    public bool isDead(Transform character)
+    {
+        if (character == null) return true; // Treat null as dead
+        var attributes = character.GetComponent<CharacterAttributesScript>();
+        return attributes != null && attributes.isDead;
     }
 }

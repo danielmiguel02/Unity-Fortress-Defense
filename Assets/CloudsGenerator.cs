@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class CloudsGenerator : MonoBehaviour
 {
-    [SerializeField] int initialCloudCount = 25;
+    [SerializeField] int initialCloudCount = 40;
     [SerializeField] Transform cloudSmallPrefab;
     [SerializeField] Transform cloudBigPrefab;
     [SerializeField] BoxCollider boxCollider;
@@ -37,7 +37,8 @@ public class CloudsGenerator : MonoBehaviour
 
         foreach (Transform cloud in cloudsParent)
         {
-            cloud.position += Vector3.left * 1f * Time.deltaTime;
+            float moveSpeed = Random.Range(0.4f, 1f);
+            cloud.position += Vector3.left * moveSpeed * Time.deltaTime;
 
             if (cloud.position.x < bounds.min.x)
             {
@@ -54,7 +55,7 @@ public class CloudsGenerator : MonoBehaviour
 
     void SpawnCloud()
     {
-        float x = Random.Range(bounds.min.x, bounds.max.x);
+        float x = Random.Range(bounds.max.x - 20, bounds.max.x + 80);
         float y = Random.Range(bounds.min.y, bounds.max.y);
         float z = Random.Range(bounds.min.z, bounds.max.z);
         Vector3 position = new Vector3(x, y, z);
